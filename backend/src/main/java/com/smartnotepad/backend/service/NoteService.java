@@ -14,77 +14,212 @@ public class NoteService {
     private final NoteRepository noteRepository;
     private final UserRepository userRepository;
 
-    public NoteService(NoteRepository noteRepository, UserRepository userRepository) {
+    public NoteService(
+            NoteRepository noteRepository,
+            UserRepository userRepository
+    ) {
         this.noteRepository = noteRepository;
         this.userRepository = userRepository;
     }
 
-    public Note createNote(Long userId, Note note) {
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+    // =====================================================
+    // CREATE NOTE
+    // =====================================================
+
+    public Note createNote(
+            Long userId,
+            Note note
+    ) {
+
+        User user = userRepository
+                .findById(userId)
+                .orElseThrow(
+                        () -> new RuntimeException("User not found")
+                );
 
         note.setUser(user);
 
+        if (note.getReminderAt() != null) {
+            note.setReminderDone(false);
+        }
+
         return noteRepository.save(note);
     }
+
+
+    // =====================================================
+    // GET USER NOTES
+    // =====================================================
 
     public List<Note> getUserNotes(Long userId) {
         return noteRepository.findByUserId(userId);
     }
 
+
+    // =====================================================
+    // GET NOTE BY ID
+    // =====================================================
+
     public Note getNoteById(Long noteId) {
-        return noteRepository.findById(noteId)
-                .orElseThrow(() -> new RuntimeException("Note not found"));
+
+        return noteRepository
+                .findById(noteId)
+                .orElseThrow(
+                        () -> new RuntimeException("Note not found")
+                );
     }
 
-    public Note updateNote(Long noteId, Note updatedNote) {
 
-        Note note = getNoteById(noteId);
+    // =====================================================
+    // UPDATE NOTE
+    // =====================================================
 
-        note.setTitle(updatedNote.getTitle());
-        note.setContent(updatedNote.getContent());
-        note.setCategory(updatedNote.getCategory());
+    public Note updateNote(
+            Long noteId,
+            Note updatedNote
+    ) {
+
+        Note note =
+                getNoteById(noteId);
+
+        note.setTitle(
+                updatedNote.getTitle()
+        );
+
+        note.setContent(
+                updatedNote.getContent()
+        );
+
+        note.setCategory(
+                updatedNote.getCategory()
+        );
+
+
+        // =================================================
+        // SMART REMINDER
+        // =================================================
+
+        note.setReminderAt(
+                updatedNote.getReminderAt()
+        );
+
+        note.setReminderDone(
+                updatedNote.isReminderDone()
+        );
+
+
+        // =================================================
+        // FILE / IMAGE ATTACHMENT
+        // =================================================
+
+        note.setAttachmentName(
+                updatedNote.getAttachmentName()
+        );
+
+        note.setAttachmentUrl(
+                updatedNote.getAttachmentUrl()
+        );
+
+        note.setAttachmentType(
+                updatedNote.getAttachmentType()
+        );
+
 
         return noteRepository.save(note);
     }
 
+
+    // =====================================================
+    // DELETE NOTE
+    // =====================================================
+
     public void deleteNote(Long noteId) {
 
         if (!noteRepository.existsById(noteId)) {
-            throw new RuntimeException("Note not found");
+
+            throw new RuntimeException(
+                    "Note not found"
+            );
         }
 
         noteRepository.deleteById(noteId);
     }
 
+
+    // =====================================================
+    // FAVORITE
+    // =====================================================
+
     public Note toggleFavorite(Long noteId) {
 
-        Note note = getNoteById(noteId);
+        Note note =
+                getNoteById(noteId);
 
-        note.setFavorite(!note.isFavorite());
+        note.setFavorite(
+                !note.isFavorite()
+        );
 
         return noteRepository.save(note);
     }
+
+
+    // =====================================================
+    // ARCHIVE
+    // =====================================================
 
     public Note toggleArchive(Long noteId) {
 
-        Note note = getNoteById(noteId);
+        Note note =
+                getNoteById(noteId);
 
-        note.setArchived(!note.isArchived());
+        note.setArchived(
+                !note.isArchived()
+        );
 
         return noteRepository.save(note);
     }
 
-    public List<Note> getFavoriteNotes(Long userId) {
-        return noteRepository.findByUserIdAndFavoriteTrue(userId);
+
+    // =====================================================
+    // FAVORITE NOTES
+    // =====================================================
+
+    public List<Note> getFavoriteNotes(
+            Long userId
+    ) {
+
+        return noteRepository
+                .findByUserIdAndFavoriteTrue(userId);
     }
 
-    public List<Note> getNotesByCategory(Long userId, String category) {
-        return noteRepository.findByUserIdAndCategoryIgnoreCase(userId, category);
+
+    // =====================================================
+    // CATEGORY FILTER
+    // =====================================================
+
+    public List<Note> getNotesByCategory(
+            Long userId,
+            String category
+    ) {
+
+        return noteRepository
+                .findByUserIdAndCategoryIgnoreCase(
+                        userId,
+                        category
+                );
     }
 
-    public List<Note> searchNotes(Long userId, String keyword) {
+
+    // =====================================================
+    // SEARCH
+    // =====================================================
+
+    public List<Note> searchNotes(
+            Long userId,
+            String keyword
+    ) {
+
         return noteRepository
                 .findByUserIdAndTitleContainingIgnoreCaseOrUserIdAndContentContainingIgnoreCase(
                         userId,
